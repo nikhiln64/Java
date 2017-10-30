@@ -5,15 +5,11 @@ import java.sql.Timestamp;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import javax.servlet.http.HttpSession;
-
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.token.bo.TokenServiceBO;
+import com.token.utilities.TokenServiceModel;
 import com.token.utilities.TokenUtil;
 import com.token.utilities.TokenUtil.TokenStatus;
 
@@ -21,82 +17,84 @@ import com.token.utilities.TokenUtil.TokenStatus;
 public class TokenServiceSO {
 
 	@Autowired
-	SessionFactory sessionFactory;
-	
-	TokenServiceBO maptoken = new TokenServiceBO();
+	TokenServiceSDO tokenServiceSDO;
 
-	public String tokenCreate(String payLoad, BigDecimal lifeTime, HttpSession session) {
+	TokenServiceBO maptoken;
+	TokenUtil tokenUtil;
+
+	public TokenServiceModel tokenCreate(TokenServiceModel tokenServiceModel) {
 		String token = null;
 		maptoken = new TokenServiceBO();
 		try {
-			Session hibSession = null;
-			Transaction tx = null;
-			hibSession = sessionFactory.openSession();
-			tx = hibSession.beginTransaction();
+			/* Creating UUID based token */
 			token = UUID.randomUUID().toString().toUpperCase();
 			maptoken.setToken(token);
-			maptoken.setPayload(payLoad);
-			if (lifeTime != null) {
-				int lifeTimeIntVal=	lifeTime.multiply(new BigDecimal(60)).intValue();
+			maptoken.setPayload(tokenServiceModel.getPayload());
+			maptoken.setAppName(tokenServiceModel.getAppName());
+			maptoken.setIpAddress(tokenServiceModel.getIpAddress());
+			maptoken.setUserId(tokenServiceModel.getUserId());
+			tokenServiceModel.setToken(token);
+			if (tokenServiceModel.getLifeTime() != null) {
+				int lifeTimeIntVal = tokenServiceModel.getLifeTime().multiply(new BigDecimal(60)).intValue();
 				BigDecimal tokenLifeTime = new BigDecimal(lifeTimeIntVal);
 				maptoken.setLifeTime(tokenLifeTime);
+				tokenServiceModel.setLifeTime(tokenLifeTime);
 			} else {
 				maptoken.setLifeTime(null);
 			}
-			hibSession.save(maptoken);
-			tx.commit();
+			if (tokenServiceSDO.pushToDatabase(maptoken)) {
+				return tokenServiceModel;
+			}
 		} catch (Exception e) {
 			System.out.println("Token Service Failed " + e);
 			token = null;
 		}
-		return token;
+		return tokenServiceModel;
 	}
-	
-	
-	public String tokenValidate(String token, HttpSession session) {
-		String payLoad = null;
+
+	public TokenServiceModel tokenValidate(String token) {
 		maptoken = new TokenServiceBO();
+		tokenUtil = new TokenUtil();
+		TokenServiceModel tokenServiceModel = new TokenServiceModel();
 		try {
-			Session hibSession = null;
-			Transaction tx = null;
-			hibSession = sessionFactory.openSession();
-			tx = hibSession.beginTransaction();
 			Timestamp currentTimestamp = new Timestamp(System.currentTimeMillis());
-			maptoken = (TokenServiceBO) hibSession.get(TokenServiceBO.class, token);
+			maptoken = tokenServiceSDO.getFromDatabase(TokenServiceBO.class, token);
 			if (maptoken != null) {
-				// Check if status is equal to 0 then
-					// Validate provided time period
-					if (maptoken.getLifeTime() != null && maptoken.getCount() == TokenStatus.INITIAL.getStatusId()) {
-						long createdTimeStampDiff = TimeUnit.MILLISECONDS
-								.toMinutes(currentTimestamp.getTime() - maptoken.getTimeStamp().getTime());
-						if (createdTimeStampDiff < maptoken.getLifeTime().intValue()) {
-							// Save payload into local variable
-							payLoad = maptoken.getPayload();
-							//maptoken.setStatus(1);
-						} else {
-							// Delete token in DB and commit
-							maptoken.setCount(TokenStatus.DELETED.getStatusId());
-						}
+				/*
+				 * Check if status is equal to 0 then Validate provided time
+				 * period
+				 */
+				if (maptoken.getLifeTime() != null && maptoken.getCount() == TokenStatus.INITIAL.getStatusId()) {
+					long createdTimeStampDiff = TimeUnit.MILLISECONDS
+							.toMinutes(currentTimestamp.getTime() - maptoken.getTimeStamp().getTime());
+					if (createdTimeStampDiff < maptoken.getLifeTime().intValue()) {
+						tokenServiceModel.setPayload(maptoken.getPayload());
 					} else {
-						// Validate the 5 min time period
+						// Delete token in DB and commit
+						maptoken.setCount(TokenStatus.DELETED.getStatusId());
+						tokenServiceModel.setMessage(TokenUtil.TOKEN_EXPIREY_MESSAGE);
+					}
+				} else {
+					// Validate the 5 min time period
 					if (maptoken.getCount() == TokenStatus.INITIAL.getStatusId()) {
-							// Save payload into local variable
-							payLoad = maptoken.getPayload();
-							maptoken.setCount(TokenStatus.DELETED.getStatusId());
-					}else {
-							// Delete token in DB and commit
-							maptoken.setCount(TokenStatus.DELETED.getStatusId());
-						}
+						// Save payload into local variable
+						tokenServiceModel.setPayload(maptoken.getPayload());
+						maptoken.setCount(TokenStatus.DELETED.getStatusId());
+					} else {
+						// Delete token in DB and commit
+						maptoken.setCount(TokenStatus.DELETED.getStatusId());
+						tokenServiceModel.setMessage(TokenUtil.TOKEN_EXPIREY_MESSAGE);
+					}
 				}
-				hibSession.saveOrUpdate(maptoken);
-				tx.commit();
+				if (tokenServiceSDO.pushToDatabase(maptoken)) {
+					return tokenUtil.convertBOtoVO(tokenServiceModel,maptoken);
+				}
 			}
-			hibSession.close();
 		} catch (Exception e) {
 			System.out.println("Token Service Failed " + e);
-			payLoad = null;
+			return tokenUtil.convertBOtoVO(tokenServiceModel,maptoken);
 		}
-		return payLoad;
+		return tokenUtil.convertBOtoVO(tokenServiceModel,maptoken);
 	}
-	
+
 }
