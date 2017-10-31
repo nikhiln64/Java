@@ -1,6 +1,7 @@
 package com.token.utilities;
 
 import com.token.bo.TokenServiceBO;
+import com.token.utilities.TokenUtil.TokenStatus;
 
 public class TokenUtil {
 	// if token life time is null, then default token expiry value is 5 minutes
@@ -28,10 +29,9 @@ public class TokenUtil {
 
 	public TokenServiceModel convertBOtoVO(TokenServiceModel tokenServiceModel, TokenServiceBO maptoken) {
 		if (maptoken != null) {
-			if (tokenServiceModel.getMessage() != null) {
-				if (tokenServiceModel.getMessage().equalsIgnoreCase(TOKEN_EXPIREY_MESSAGE)) {
-					return tokenServiceModel;
-				}
+			if (TokenStatus.DELETED.getStatusId() == maptoken.getCount()) {
+				tokenServiceModel.setMessage(TOKEN_EXPIREY_MESSAGE);
+				return tokenServiceModel;
 			}
 			if (maptoken.getAppName() != null)
 				tokenServiceModel.setAppName(maptoken.getAppName());

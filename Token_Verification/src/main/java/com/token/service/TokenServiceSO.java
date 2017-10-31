@@ -67,12 +67,11 @@ public class TokenServiceSO {
 				if (maptoken.getLifeTime() != null && maptoken.getCount() == TokenStatus.INITIAL.getStatusId()) {
 					long createdTimeStampDiff = TimeUnit.MILLISECONDS
 							.toMinutes(currentTimestamp.getTime() - maptoken.getTimeStamp().getTime());
-					if (createdTimeStampDiff < maptoken.getLifeTime().intValue()) {
+					if (createdTimeStampDiff <= maptoken.getLifeTime().intValue()) {
 						tokenServiceModel.setPayload(maptoken.getPayload());
 					} else {
 						// Delete token in DB and commit
 						maptoken.setCount(TokenStatus.DELETED.getStatusId());
-						tokenServiceModel.setMessage(TokenUtil.TOKEN_EXPIREY_MESSAGE);
 					}
 				} else {
 					// Validate the 5 min time period
@@ -83,7 +82,6 @@ public class TokenServiceSO {
 					} else {
 						// Delete token in DB and commit
 						maptoken.setCount(TokenStatus.DELETED.getStatusId());
-						tokenServiceModel.setMessage(TokenUtil.TOKEN_EXPIREY_MESSAGE);
 					}
 				}
 				if (tokenServiceSDO.pushToDatabase(maptoken)) {
