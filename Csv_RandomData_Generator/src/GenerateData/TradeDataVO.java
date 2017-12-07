@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 
 public class TradeDataVO {
 	private String tradeFlow;
-	private int month;
+	private String month;
 	private int year;
 	private long hsCode;
 	private String productName;
@@ -21,11 +21,11 @@ public class TradeDataVO {
 		this.tradeFlow = tradeFlow;
 	}
 
-	public int getMonth() {
+	public String getMonth() {
 		return month;
 	}
 
-	public void setMonth(int month) {
+	public void setMonth(String month) {
 		this.month = month;
 	}
 
