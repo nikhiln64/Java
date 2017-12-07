@@ -1,5 +1,6 @@
 package GenerateData;
 
+import java.util.Arrays;
 import java.util.Random;
 
 public class GenerateData {
@@ -20,16 +21,17 @@ public class GenerateData {
 	}
 
 	/* Column 2 Random Generator */
-	protected int generateMonth() {
-		int month = 0;
+	protected String generateMonth() {
+		String month = null;
 		try {
 			System.out.println("**** generateMonth Started ****");
 			Random random = new Random();
-			month = random.nextInt(Utilities.MAXIMUM_MONTH - Utilities.MINIMUM_MONTH + 1) + Utilities.MINIMUM_MONTH;
+			int index = random.nextInt(Utilities.MONTHS.length - 1);
+			month = Utilities.MONTHS[index];
 			return month;
 		} catch (Exception e) {
 			System.out.println("generateMonth Failed ==> " + e);
-			return 0;
+			return null;
 		}
 	}
 
