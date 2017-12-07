@@ -1,12 +1,13 @@
 package GenerateData;
 
+import java.text.DateFormatSymbols;
+
 public class Utilities {
 	/* Trade Flow */
 	protected static final String[] TRADE_FLOW = { "IMPORT", "EXPORT" };
 
 	/* Month */
-	protected static final int MINIMUM_MONTH = 1;
-	protected static final int MAXIMUM_MONTH = 12;
+	protected static final String[] MONTHS = new DateFormatSymbols().getMonths();
 
 	/* YEAR */
 	protected static final int MINIMUM_YEAR = 2014;
