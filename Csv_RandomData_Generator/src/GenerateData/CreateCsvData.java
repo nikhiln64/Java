@@ -3,6 +3,7 @@ package GenerateData;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -37,8 +38,8 @@ public class CreateCsvData {
 		try {
 			System.out.println("**** writeCsvFile started ****");
 			fileWriter = new FileWriter(fileName);
-
-			fileWriter.append("NIKHIL," + new Date().toString());
+			SimpleDateFormat dt1 = new SimpleDateFormat("MM/dd/yyyy");
+			fileWriter.append("HDR," +dt1.format(new Date()));
 
 			// Add a new line separator after the header
 			fileWriter.append(NEW_LINE_SEPARATOR);
